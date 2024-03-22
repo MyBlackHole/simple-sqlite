@@ -30,15 +30,15 @@ typedef struct HashElem HashElem;
 ** this structure opaque.
 */
 struct Hash {
-    char keyClass;          /* SQLITE_HASH_INT, _POINTER, _STRING, _BINARY */
-    char copyKey;           /* True if copy of key made on insert */
-    int count;              /* Number of entries in this table */
-    HashElem *first;        /* The first element of the array */
-    int htsize;             /* Number of buckets in the hash table */
-    struct _ht {            /* the hash table */
-        int count;               /* Number of entries with this hash */
-        HashElem *chain;         /* Pointer to first entry with this hash */
-    } *ht;
+  char keyClass;     /* SQLITE_HASH_INT, _POINTER, _STRING, _BINARY */
+  char copyKey;      /* True if copy of key made on insert */
+  int count;         /* Number of entries in this table */
+  HashElem *first;   /* The first element of the array */
+  int htsize;        /* Number of buckets in the hash table */
+  struct _ht {       /* the hash table */
+    int count;       /* Number of entries with this hash */
+    HashElem *chain; /* Pointer to first entry with this hash */
+  } *ht;
 };
 
 /* Each element in the hash table is an instance of the following
@@ -48,9 +48,10 @@ struct Hash {
 ** be opaque because it is used by macros.
 */
 struct HashElem {
-    HashElem *next, *prev;   /* Next and previous elements in the table */
-    void *data;              /* Data associated with this element */
-    void *pKey; int nKey;    /* Key associated with this element */
+  HashElem *next, *prev; /* Next and previous elements in the table */
+  void *data;            /* Data associated with this element */
+  void *pKey;
+  int nKey; /* Key associated with this element */
 };
 
 /*
@@ -70,18 +71,18 @@ struct HashElem {
 ** A copy of the key is made for SQLITE_HASH_STRING and SQLITE_HASH_BINARY
 ** if the copyKey parameter to HashInit is 1.
 */
-#define SQLITE_HASH_INT       1
-#define SQLITE_HASH_POINTER   2
-#define SQLITE_HASH_STRING    3
-#define SQLITE_HASH_BINARY    4
+#define SQLITE_HASH_INT 1
+#define SQLITE_HASH_POINTER 2
+#define SQLITE_HASH_STRING 3
+#define SQLITE_HASH_BINARY 4
 
 /*
 ** Access routines.  To delete, insert a NULL pointer.
 */
-void sqliteHashInit(Hash*, int keytype, int copyKey);
-void *sqliteHashInsert(Hash*, const void *pKey, int nKey, void *pData);
-void *sqliteHashFind(const Hash*, const void *pKey, int nKey);
-void sqliteHashClear(Hash*);
+void sqliteHashInit(Hash *, int keytype, int copyKey);
+void *sqliteHashInsert(Hash *, const void *pKey, int nKey, void *pData);
+void *sqliteHashFind(const Hash *, const void *pKey, int nKey);
+void sqliteHashClear(Hash *);
 
 static int strHash(const void *pKey, int nKey);
 
@@ -97,15 +98,15 @@ static int strHash(const void *pKey, int nKey);
 **     // do something with pData
 **   }
 */
-#define sqliteHashFirst(H)  ((H)->first)
-#define sqliteHashNext(E)   ((E)->next)
-#define sqliteHashData(E)   ((E)->data)
-#define sqliteHashKey(E)    ((E)->pKey)
+#define sqliteHashFirst(H) ((H)->first)
+#define sqliteHashNext(E) ((E)->next)
+#define sqliteHashData(E) ((E)->data)
+#define sqliteHashKey(E) ((E)->pKey)
 #define sqliteHashKeysize(E) ((E)->nKey)
 
 /*
 ** Number of entries in a hash table
 */
-#define sqliteHashCount(H)  ((H)->count)
+#define sqliteHashCount(H) ((H)->count)
 
 #endif /* _SQLITE_HASH_H_ */

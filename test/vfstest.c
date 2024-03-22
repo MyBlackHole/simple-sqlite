@@ -2,6 +2,7 @@
 #include "vfstest.h"
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 
 /**
  * Test VFS implimetation by writing and reading back data into a file specified by fileLocation.

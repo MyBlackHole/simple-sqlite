@@ -1,5 +1,7 @@
 #include "btree.h"
 #include "os.h"
+#include <stdio.h>
+#include <string.h>
 
 void testBtree(char **fileLocation) {
     printf("\nStart running Btree tests\n");

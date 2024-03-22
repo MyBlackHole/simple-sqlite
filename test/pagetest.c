@@ -2,6 +2,7 @@
 #include "os.h"
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 
 /**
  * Test Pager implemetation by reading and writing into a page

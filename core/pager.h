@@ -47,30 +47,31 @@ typedef struct Pager Pager;
 ** See source code comments for a detailed description of the following
 ** routines:
 */
-int sqlitepager_open(Pager **ppPager,const char *zFilename,int nPage,int nEx);
-void sqlitepager_set_destructor(Pager*, void(*)(void*));
-void sqlitepager_set_cachesize(Pager*, int);
+int sqlitepager_open(Pager **ppPager, const char *zFilename, int nPage,
+                     int nEx);
+void sqlitepager_set_destructor(Pager *, void (*)(void *));
+void sqlitepager_set_cachesize(Pager *, int);
 int sqlitepager_close(Pager *pPager);
 int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage);
 void *sqlitepager_lookup(Pager *pPager, Pgno pgno);
-int sqlitepager_ref(void*);
-int sqlitepager_unref(void*);
-Pgno sqlitepager_pagenumber(void*);
-int sqlitepager_write(void*);
-int sqlitepager_iswriteable(void*);
-int sqlitepager_pagecount(Pager*);
-int sqlitepager_begin(void*);
-int sqlitepager_commit(Pager*);
-int sqlitepager_rollback(Pager*);
-int sqlitepager_isreadonly(Pager*);
-int sqlitepager_ckpt_begin(Pager*);
-int sqlitepager_ckpt_commit(Pager*);
-int sqlitepager_ckpt_rollback(Pager*);
-void sqlitepager_dont_rollback(void*);
-void sqlitepager_dont_write(Pager*, Pgno);
-int *sqlitepager_stats(Pager*);
+int sqlitepager_ref(void *);
+int sqlitepager_unref(void *);
+Pgno sqlitepager_pagenumber(void *);
+int sqlitepager_write(void *);
+int sqlitepager_iswriteable(void *);
+int sqlitepager_pagecount(Pager *);
+int sqlitepager_begin(void *);
+int sqlitepager_commit(Pager *);
+int sqlitepager_rollback(Pager *);
+int sqlitepager_isreadonly(Pager *);
+int sqlitepager_ckpt_begin(Pager *);
+int sqlitepager_ckpt_commit(Pager *);
+int sqlitepager_ckpt_rollback(Pager *);
+void sqlitepager_dont_rollback(void *);
+void sqlitepager_dont_write(Pager *, Pgno);
+int *sqlitepager_stats(Pager *);
 
 #ifdef SQLITE_TEST
-void sqlitepager_refdump(Pager*);
+void sqlitepager_refdump(Pager *);
 int pager_refinfo_enable;
 #endif
