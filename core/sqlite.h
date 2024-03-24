@@ -143,6 +143,7 @@ int sqlite_exec(sqlite *,        /* An open database */
 #define SQLITE_READONLY 8    /* Attempt to write a readonly database */
 #define SQLITE_INTERRUPT 9   /* Operation terminated by sqlite_interrupt() */
 #define SQLITE_IOERR 10      /* Some kind of disk I/O error occurred */
+// 数据库磁盘映像格式错误
 #define SQLITE_CORRUPT 11    /* The database disk image is malformed */
 #define SQLITE_NOTFOUND 12   /* (Internal Only) Table or record not found */
 #define SQLITE_FULL 13       /* Insertion failed because database is full */

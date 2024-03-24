@@ -201,6 +201,7 @@ static void local_ioerr() {
 /*
 ** Delete the named file
 */
+// 删除文件
 int sqliteOsDelete(const char *zFilename) {
 #if OS_UNIX
   unlink(zFilename);
@@ -520,6 +521,7 @@ int sqliteOsSeek(OsFile *id, int offset) {
 /*
 ** Make sure all writes to a particular file are committed to disk.
 */
+// 同步数据确保落盘
 int sqliteOsSync(OsFile *id) {
   SimulateIOError(SQLITE_IOERR);
   TRACE1("SYNC\n");
@@ -534,6 +536,7 @@ int sqliteOsSync(OsFile *id) {
 /*
 ** Truncate an open file to a specified size
 */
+// 将打开的文件截断为指定大小
 int sqliteOsTruncate(OsFile *id, int nByte) {
   SimulateIOError(SQLITE_IOERR);
 #if OS_UNIX
@@ -549,6 +552,7 @@ int sqliteOsTruncate(OsFile *id, int nByte) {
 /*
 ** Determine the current size of a file in bytes
 */
+// 确定文件的当前大小（以字节为单位）
 int sqliteOsFileSize(OsFile *id, int *pSize) {
 #if OS_UNIX
   struct stat buf;

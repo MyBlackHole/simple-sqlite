@@ -24,6 +24,7 @@
 ** experiments show that a page size of 1024 gives the best speed.
 ** (The speed differences are minimal.)
 */
+// 一页的大小
 #define SQLITE_PAGE_SIZE 1024
 
 /*
@@ -36,6 +37,9 @@
 ** The type used to represent a page number.  The first page in a file
 ** is called page 1.  0 is used to represent "not a page".
 */
+// 用于表示页码的类型。 
+// 文件中的第一页称为 1 页。
+// 0 用于表示“不是页”。
 typedef unsigned int Pgno;
 
 /*
