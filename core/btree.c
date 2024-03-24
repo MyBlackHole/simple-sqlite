@@ -119,6 +119,7 @@ static const char zMagicHeader[] =
 struct PageOne {
   char zMagic[MAGIC_SIZE]; /* String that identifies the file as a database */
   int iMagic;              /* Integer to verify correct byte order */
+  // 所有可用页面列表中的第一个可用页面
   Pgno freeList;           /* First free page in a list of all free pages */
   int nFree;               /* Number of pages on the free list */
   int aMeta[SQLITE_N_BTREE_META - 1]; /* User defined integers */
@@ -319,12 +320,17 @@ struct MemPage {
 ** Everything we need to know about an open database
 */
 struct Btree {
+  // 页面缓存
   Pager *pPager;     /* The page cache */
+  // 所有打开的游标的列表
   BtCursor *pCursor; /* A list of all open cursors */
+  // 数据库的第一页
   PageOne *page1;    /* First page of the database */
+  // 如果交易正在进行则为 True
   u8 inTrans;        /* True if a transaction is in progress */
   u8 inCkpt;         /* True if there is a checkpoint on the transaction */
   u8 readOnly;       /* True if the underlying file is readonly */
+  // hash 结构锁管理
   Hash locks;        /* Key: root page number.  Data: lock count */
 };
 typedef Btree Bt;
@@ -337,6 +343,7 @@ typedef Btree Bt;
 struct BtCursor {
   Btree *pBt;              /* The Btree to which this cursor belongs */
   BtCursor *pNext, *pPrev; /* Forms a linked list of all cursors */
+  // 这棵树的根页面
   Pgno pgnoRoot;           /* The root page of this tree */
   MemPage *pPage;          /* Page that contains the entry */
   int idx;                 /* Index of the entry in pPage->apCell[] */
@@ -516,6 +523,7 @@ static void freeSpace(MemPage *pPage, int start, int size) {
 ** guarantee that the page is well-formed.  It only shows that
 ** we failed to detect any corruption.
 */
+// 初始化磁盘块的辅助信息。
 static int initPage(MemPage *pPage, Pgno pgnoThis, MemPage *pParent) {
   int idx;        /* An index into pPage->u.aDisk[] */
   Cell *pCell;    /* A pointer to a Cell in pPage->u.aDisk[] */
@@ -582,6 +590,7 @@ page_format_error:
 ** Set up a raw page so that it looks like a database page holding
 ** no entries.
 */
+// 设置原始页面，使其看起来像不包含任何条目的数据库页面。
 static void zeroPage(MemPage *pPage) {
   PageHdr *pHdr;
   FreeBlk *pFBlk;
@@ -603,6 +612,8 @@ static void zeroPage(MemPage *pPage) {
 ** reaches zero.  We need to unref the pParent pointer when that
 ** happens.
 */
+// 当页面的引用计数达到零时调用此例程。 
+// 当这种情况发生时，我们需要取消引用 pParent 指针。
 static void pageDestructor(void *pData) {
   MemPage *pPage = (MemPage *)pData;
   if (pPage->pParent) {
@@ -623,6 +634,7 @@ static void pageDestructor(void *pData) {
 ** a new database with a random name is created.  This randomly named
 ** database file will be deleted when sqliteBtreeClose() is called.
 */
+// 打开数据库
 int sqliteBtreeOpen(
     const char *zFilename, /* Name of the file containing the BTree database */
     int mode,              /* Not currently used */
@@ -632,6 +644,7 @@ int sqliteBtreeOpen(
   Btree *pBt;
   int rc;
 
+  // 分配初始化 B 树空间
   pBt = malloc(sizeof(*pBt));
   memset(pBt, 0, sizeof(*pBt));
 
@@ -641,6 +654,7 @@ int sqliteBtreeOpen(
   }
   if (nCache < 10)
     nCache = 10;
+  // 打开文件创建页缓存对象
   rc = sqlitepager_open(&pBt->pPager, zFilename, nCache, EXTRA_SIZE);
   if (rc != SQLITE_OK) {
     if (pBt->pPager)
@@ -649,10 +663,12 @@ int sqliteBtreeOpen(
     *ppBtree = 0;
     return rc;
   }
+  // 指定释放页面函数
   sqlitepager_set_destructor(pBt->pPager, pageDestructor);
   pBt->pCursor = 0;
   pBt->page1 = 0;
   pBt->readOnly = sqlitepager_isreadonly(pBt->pPager);
+  // 锁 hash 初始化
   sqliteHashInit(&pBt->locks, SQLITE_HASH_INT, 0);
   *ppBtree = pBt;
   return SQLITE_OK;
@@ -701,10 +717,13 @@ int sqliteBtreeSetCacheSize(Btree *pBt, int mxPage) {
 ** is returned if we run out of memory.  SQLITE_PROTOCOL is returned
 ** if there is a locking protocol violation.
 */
+// 获取对数据库文件 page1 的引用。 
+// 这还将获得该文件的读锁。
 static int lockBtree(Btree *pBt) {
   int rc;
   if (pBt->page1)
     return SQLITE_OK;
+  // 获取第一个页
   rc = sqlitepager_get(pBt->pPager, 1, (void **)&pBt->page1);
   if (rc != SQLITE_OK)
     return rc;
@@ -712,6 +731,7 @@ static int lockBtree(Btree *pBt) {
   /* Do some checking to help insure the file we opened really is
   ** a valid database file.
   */
+  // 进行一些检查以帮助确保我们打开的文件确实是有效的数据库文件。
   if (sqlitepager_pagecount(pBt->pPager) > 0) {
     PageOne *pP1 = pBt->page1;
     if (strcmp(pP1->zMagic, zMagicHeader) != 0 || pP1->iMagic != MAGIC) {
@@ -750,6 +770,7 @@ static void unlockBtreeIfUnused(Btree *pBt) {
 ** Create a new database by initializing the first two pages of the
 ** file.
 */
+// 通过初始化文件的前两页来创建新数据库。
 static int newDatabase(Btree *pBt) {
   MemPage *pRoot;
   PageOne *pP1;
@@ -790,6 +811,7 @@ static int newDatabase(Btree *pBt) {
 **      sqliteBtreeDelete()
 **      sqliteBtreeUpdateMeta()
 */
+// 尝试开始新的事务。
 int sqliteBtreeBeginTrans(Btree *pBt) {
   int rc;
   if (pBt->inTrans)
@@ -801,6 +823,7 @@ int sqliteBtreeBeginTrans(Btree *pBt) {
     }
   }
   if (pBt->readOnly) {
+    // 只读
     rc = SQLITE_OK;
   } else {
     rc = sqlitepager_begin(pBt->page1);
@@ -823,6 +846,7 @@ int sqliteBtreeBeginTrans(Btree *pBt) {
 ** This will release the write lock on the database file.  If there
 ** are no active cursors, it also releases the read lock.
 */
+// 提交当前正在进行的事务。
 int sqliteBtreeCommit(Btree *pBt) {
   int rc;
   if (pBt->inTrans == 0)
@@ -936,6 +960,8 @@ int sqliteBtreeRollbackCkpt(Btree *pBt) {
 ** root page of a b-tree.  If it is not, then the cursor acquired
 ** will not work correctly.
 */
+// 为根位于页面 iTable 上的 BTree 创建一个新游标。 
+// 获取游标的行为会获得数据库文件上的读锁。
 int sqliteBtreeCursor(Btree *pBt, int iTable, int wrFlag, BtCursor **ppCur) {
   int rc;
   BtCursor *pCur;
@@ -952,16 +978,19 @@ int sqliteBtreeCursor(Btree *pBt, int iTable, int wrFlag, BtCursor **ppCur) {
     *ppCur = 0;
     return SQLITE_READONLY;
   }
+  // 分配内存
   pCur = sqliteMalloc(sizeof(*pCur));
   if (pCur == 0) {
     rc = SQLITE_NOMEM;
     goto create_cursor_exception;
   }
+  // 应该是零
   pCur->pgnoRoot = (Pgno)iTable;
   rc = sqlitepager_get(pBt->pPager, pCur->pgnoRoot, (void **)&pCur->pPage);
   if (rc != SQLITE_OK) {
     goto create_cursor_exception;
   }
+  // 初始化页
   rc = initPage(pCur->pPage, pCur->pgnoRoot, 0);
   if (rc != SQLITE_OK) {
     goto create_cursor_exception;
@@ -1569,6 +1598,7 @@ int sqliteBtreeNext(BtCursor *pCur, int *pRes) {
 ** an error.  *ppPage and *pPgno are undefined in the event of an error.
 ** Do not invoke sqlitepager_unref() on *ppPage if an error is returned.
 */
+// 从数据库文件分配一个新页面。
 static int allocatePage(Btree *pBt, MemPage **ppPage, Pgno *pPgno) {
   PageOne *pPage1 = pBt->page1;
   int rc;
@@ -1580,6 +1610,7 @@ static int allocatePage(Btree *pBt, MemPage **ppPage, Pgno *pPgno) {
     if (rc)
       return rc;
     pPage1->nFree--;
+    // 获取第一个可用页面 pOvfl
     rc = sqlitepager_get(pBt->pPager, pPage1->freeList, (void **)&pOvfl);
     if (rc)
       return rc;
@@ -2523,6 +2554,8 @@ int sqliteBtreeDelete(BtCursor *pCur) {
 ** are restricted to having a 4-byte integer key and arbitrary data and
 ** BTree indices are restricted to having an arbitrary key and no data.
 */
+// 创建一个新的 BTree 表。 
+// 将新表的根页的页号写入*piTable。
 int sqliteBtreeCreateTable(Btree *pBt, int *piTable) {
   MemPage *pRoot;
   Pgno pgnoRoot;

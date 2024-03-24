@@ -128,6 +128,7 @@ struct Pager {
   // 将这么多字节添加到每个内存页面
   // 额外占用
   int nExtra;              /* Add this many bytes to each in-memory page */
+  // 释放页面时调用此例程
   void (*xDestructor)(void *); /* Call this routine when freeing pages */
   // 内存页总数
   int nPage;                   /* Total number of in-memory pages */
@@ -572,6 +573,13 @@ static int sqlitepager_opentemp(char *zFile, OsFile *fd) {
 ** and used as the file to be cached.  The file will be deleted
 ** automatically when it is closed.
 */
+// 创建一个新的页面缓存并将指向该页面缓存的指针放入 *ppPager 中。
+// 要缓存的文件不必存在。 
+// 文件在第一次调用 sqlitepager_get() 之前不会被锁定，
+// 并且仅在使用 sqlitepager_unref() 释放最后一页之前保持打开状态。
+//
+// 如果 zFilename 为 NULL，则创建一个随机命名的临时文件并将其用作要缓存的文件。 
+// 关闭时该文件将自动删除。
 int sqlitepager_open(
     Pager **ppPager,       /* Return the Pager structure here */
     const char *zFilename, /* Name of the database file to open */
@@ -590,6 +598,7 @@ int sqlitepager_open(
   if (sqlite_malloc_failed) {
     return SQLITE_NOMEM;
   }
+  // 创建或打开数据库文件
   if (zFilename) {
     rc = sqliteOsOpenReadWrite(zFilename, &fd, &readOnly);
     tempFile = 0;
@@ -632,6 +641,7 @@ int sqlitepager_open(
   pPager->pFirst = 0;
   pPager->pLast = 0;
   pPager->nExtra = nExtra;
+  // 初始化 hash 结构
   memset(pPager->aHash, 0, sizeof(pPager->aHash));
   *ppPager = pPager;
   return SQLITE_OK;
@@ -645,6 +655,7 @@ int sqlitepager_open(
 ** The destructor is not called as a result sqlitepager_close().
 ** Destructors are only called by sqlitepager_unref().
 */
+// 设置释放页面例程
 void sqlitepager_set_destructor(Pager *pPager, void (*xDesc)(void *)) {
   pPager->xDestructor = xDesc;
 }
@@ -824,6 +835,7 @@ static int syncAllPages(Pager *pPager) {
 ** Since _lookup() never goes to disk, it never has to deal with locks
 ** or journal files.
 */
+// 获取页面
 int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage) {
   PgHdr *pPg;
 
@@ -1147,6 +1159,10 @@ int sqlitepager_unref(void *pData) {
 */
 // 获取数据库的写锁。 
 // 当发生以下任一情况时，锁被解除：
+// sqlitepager_commit() is called.
+// sqlitepager_rollback() is called.
+// sqlitepager_close() is called.
+// sqlitepager_unref() is called to on every outstanding page.
 int sqlitepager_begin(void *pData) {
   PgHdr *pPg = DATA_TO_PGHDR(pData);
   Pager *pPager = pPg->pPager;

@@ -237,6 +237,8 @@ int sqliteOsFileExists(const char *zFilename) {
 ** On failure, the function returns SQLITE_CANTOPEN and leaves
 ** *pResulst and *pReadonly unchanged.
 */
+// 读写创建打开文件
+// 同时获取文件锁信息
 int sqliteOsOpenReadWrite(const char *zFilename, OsFile *id, int *pReadonly) {
 #if OS_UNIX
   id->fd = open(zFilename, O_RDWR | O_CREAT, 0644);

@@ -8,6 +8,7 @@ void testBtree(char **fileLocation) {
     Btree *pBt;
     char zBuf[100];
     int rc;
+    // 打开数据库
     rc = sqliteBtreeOpen(*fileLocation, 0666, 10, &pBt);
     printf("Error while opening sqlite database %d\n", rc);
     if( rc!=0 ){
@@ -16,12 +17,15 @@ void testBtree(char **fileLocation) {
 
     int iTable;
     sqliteBtreeBeginTrans(pBt);
+    // 创建新表并将表id返回给iTable
     rc = sqliteBtreeCreateTable(pBt, &iTable);          // Create new table and return table id to iTable
     printf("Root Page id: %d\n",iTable);
     sqliteBtreeCommit(pBt);                         // Commit changes to file system
 
     BtCursor *pCur;
+    // 读写
     int wrFlag = 1; // Read and write
+    // 获取 B 树游标
     rc = sqliteBtreeCursor(pBt, iTable, wrFlag, &pCur);         // Get cursor to Btree
 
     char *keyToWrote = "key1";
@@ -106,7 +110,7 @@ void testBtree(char **fileLocation) {
 
     int aMeta[SQLITE_N_BTREE_META];
     rc = sqliteBtreeGetMeta(pBt, aMeta);
-    printf("meta data: %d\n" ,aMeta);
+    printf("meta data: %d\n" ,*aMeta);
 
     rc = sqliteBtreeCloseCursor(pCur);
     rc = sqliteBtreeCommit(pBt);
