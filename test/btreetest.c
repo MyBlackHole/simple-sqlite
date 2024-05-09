@@ -16,10 +16,12 @@ void testBtree(char **fileLocation) {
     }
 
     int iTable;
+    // 开始事务
     sqliteBtreeBeginTrans(pBt);
-    // 创建新表并将表id返回给iTable
+    // 创建新表并将表 id 返回给 iTable
     rc = sqliteBtreeCreateTable(pBt, &iTable);          // Create new table and return table id to iTable
     printf("Root Page id: %d\n",iTable);
+    // 提交修改
     sqliteBtreeCommit(pBt);                         // Commit changes to file system
 
     BtCursor *pCur;

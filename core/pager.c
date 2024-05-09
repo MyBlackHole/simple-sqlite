@@ -76,7 +76,7 @@
 // 调用寻呼机的客户端代码只能看到标头后面的数据。
 typedef struct PgHdr PgHdr;
 struct PgHdr {
-  // 该页面所属的寻呼机
+  // 该页面所属的 Pager 对象
   Pager *pPager;                /* The pager to which this page belongs */
   // 该页的页码
   Pgno pgno;                    /* The page number for this page */
@@ -86,6 +86,7 @@ struct PgHdr {
   int nRef;                     /* Number of users of this page */
   PgHdr *pNextFree, *pPrevFree; /* Freelist of pages where nRef==0 */
   PgHdr *pNextAll, *pPrevAll;   /* A list of all pages */
+  // 如果已写入日志则为 TRUE
   char inJournal;               /* TRUE if has been written to journal */
   // 如果写入检查点日志则为 TRUE
   char inCkpt;                  /* TRUE if written to the checkpoint journal */
@@ -99,9 +100,11 @@ struct PgHdr {
 ** Convert a pointer to a PgHdr into a pointer to its data
 ** and back again.
 */
+// 数据格式为 PgHdr + 页面数据 + 额外数据
 // 获取数据开始地址
 #define PGHDR_TO_DATA(P) ((void *)(&(P)[1]))
 #define DATA_TO_PGHDR(D) (&((PgHdr *)(D))[-1])
+// 获取额外数据开始地址
 #define PGHDR_TO_EXTRA(P) ((void *)&((char *)(&(P)[1]))[SQLITE_PAGE_SIZE])
 
 /*
@@ -116,7 +119,9 @@ struct PgHdr {
 ** A open page cache is an instance of the following structure.
 */
 struct Pager {
+  // 数据文件
   char *zFilename;         /* Name of the database file */
+  // 日志文件
   char *zJournal;          /* Name of the journal file */
   OsFile fd, jfd;          /* File descriptors for database and journal */
   OsFile cpfd;             /* File descriptor for the checkpoint journal */
@@ -152,6 +157,7 @@ struct Pager {
   // 需要调用系统同步操作
   u8 needSync;                 /* True if an fsync() is needed on the journal */
   u8 dirtyFile;            /* True if database file has changed in any way */
+  // 数据库文件中的每一页一位
   u8 *aInJournal;          /* One bit for each page in the database file */
   u8 *aInCkpt;             /* One bit for each page in the database */
   // 空闲页面列表
@@ -664,7 +670,7 @@ void sqlitepager_set_destructor(Pager *pPager, void (*xDesc)(void *)) {
 ** Return the total number of pages in the disk file associated with
 ** pPager.
 */
-// 返回与 pPager 关联的磁盘文件中的总页数。
+// 返回与 pPager 关联的磁盘文件中的"当前"总页数。
 int sqlitepager_pagecount(Pager *pPager) {
   int n;
   assert(pPager != 0);
@@ -1168,9 +1174,11 @@ int sqlitepager_begin(void *pData) {
   Pager *pPager = pPg->pPager;
   int rc = SQLITE_OK;
   assert(pPg->nRef > 0);
+  // 肯定加锁了
   assert(pPager->state != SQLITE_UNLOCK);
   if (pPager->state == SQLITE_READLOCK) {
     assert(pPager->aInJournal == 0);
+    // 加数据库文件写锁
     rc = sqliteOsWriteLock(&pPager->fd);
     if (rc != SQLITE_OK) {
       return rc;
@@ -1182,6 +1190,7 @@ int sqlitepager_begin(void *pData) {
       sqliteOsReadLock(&pPager->fd);
       return SQLITE_NOMEM;
     }
+    // 日志文件打开
     rc = sqliteOsOpenExclusive(pPager->zJournal, &pPager->jfd, 0);
     if (rc != SQLITE_OK) {
       sqliteFree(pPager->aInJournal);
@@ -1196,8 +1205,10 @@ int sqlitepager_begin(void *pData) {
     // 初始化日志头(前置信息: 魔法字、更改前的页大小)
     sqlitepager_pagecount(pPager);
     pPager->origDbSize = pPager->dbSize;
+    // 魔法字
     rc = sqliteOsWrite(&pPager->jfd, aJournalMagic, sizeof(aJournalMagic));
     if (rc == SQLITE_OK) {
+      // 当前文件的页数量
       rc = sqliteOsWrite(&pPager->jfd, &pPager->dbSize, sizeof(Pgno));
     }
     if (rc != SQLITE_OK) {

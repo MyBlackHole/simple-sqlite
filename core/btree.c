@@ -117,6 +117,7 @@ static const char zMagicHeader[] =
 ** number of 0 is used to mean "no such page".
 */
 struct PageOne {
+  // 魔法字符
   char zMagic[MAGIC_SIZE]; /* String that identifies the file as a database */
   int iMagic;              /* Integer to verify correct byte order */
   // 所有可用页面列表中的第一个可用页面
@@ -735,6 +736,7 @@ static int lockBtree(Btree *pBt) {
   if (sqlitepager_pagecount(pBt->pPager) > 0) {
     PageOne *pP1 = pBt->page1;
     if (strcmp(pP1->zMagic, zMagicHeader) != 0 || pP1->iMagic != MAGIC) {
+      // 魔法字不对
       rc = SQLITE_CORRUPT;
       goto page1_init_failed;
     }
@@ -776,6 +778,7 @@ static int newDatabase(Btree *pBt) {
   PageOne *pP1;
   int rc;
   if (sqlitepager_pagecount(pBt->pPager) > 1)
+    // 大于 1 代表初始化过了
     return SQLITE_OK;
   pP1 = pBt->page1;
   rc = sqlitepager_write(pBt->page1);
@@ -815,8 +818,10 @@ static int newDatabase(Btree *pBt) {
 int sqliteBtreeBeginTrans(Btree *pBt) {
   int rc;
   if (pBt->inTrans)
+    // 事务进行中
     return SQLITE_ERROR;
   if (pBt->page1 == 0) {
+    // 锁树
     rc = lockBtree(pBt);
     if (rc != SQLITE_OK) {
       return rc;
@@ -826,12 +831,17 @@ int sqliteBtreeBeginTrans(Btree *pBt) {
     // 只读
     rc = SQLITE_OK;
   } else {
+    // 开始事务
+    // 初始化日志文件
     rc = sqlitepager_begin(pBt->page1);
     if (rc == SQLITE_OK) {
+      // 初始化数据文件
+      // 前两个页
       rc = newDatabase(pBt);
     }
   }
   if (rc == SQLITE_OK) {
+    // 开始事务了
     pBt->inTrans = 1;
     pBt->inCkpt = 0;
   } else {
