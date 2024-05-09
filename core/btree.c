@@ -994,7 +994,7 @@ int sqliteBtreeCursor(Btree *pBt, int iTable, int wrFlag, BtCursor **ppCur) {
     rc = SQLITE_NOMEM;
     goto create_cursor_exception;
   }
-  // 应该是零
+  // 设置表的跟页号
   pCur->pgnoRoot = (Pgno)iTable;
   rc = sqlitepager_get(pBt->pPager, pCur->pgnoRoot, (void **)&pCur->pPage);
   if (rc != SQLITE_OK) {
