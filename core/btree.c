@@ -145,8 +145,11 @@ struct PageOne {
 ** right-most pointer of the page is contained in PageHdr.rightChild.
 */
 struct PageHdr {
+  // 位于该页面上所有单元格之后的子页面
   Pgno rightChild; /* Child page that comes after all cells on this page */
+  // 第一个单元格 MemPage.u.aDisk[] 中的索引
   u16 firstCell;   /* Index in MemPage.u.aDisk[] of the first cell */
+  // MemPage.u.aDisk[] 中第一个空闲块的索引
   u16 firstFree;   /* Index in MemPage.u.aDisk[] of the first free block */
 };
 
@@ -161,8 +164,10 @@ struct PageHdr {
 ** of the sizing #defines that follow.
 */
 struct CellHdr {
+  // 此单元格之前所在的页面
   Pgno leftChild; /* Child page that comes before this cell */
   u16 nKey;       /* Number of bytes in the key */
+  // MemPage.u.aDisk[] 中下一个单元格的索引（按排序顺序）
   u16 iNext;      /* Index in MemPage.u.aDisk[] of next cell in sorted order */
   u8 nKeyHi;      /* Upper 8 bits of key size for keys larger than 64K bytes */
   u8 nDataHi;     /* Upper 8 bits of data size when the size is more than 64K */
@@ -221,8 +226,10 @@ struct CellHdr {
 ** needed.
 */
 struct Cell {
+  // 记录的头
   CellHdr h;                       /* The cell header */
   char aPayload[MX_LOCAL_PAYLOAD]; /* Key and data */
+  // 指向第一个溢出页面的指针
   Pgno ovfl;                       /* The first overflow page */
 };
 
@@ -233,7 +240,9 @@ struct Cell {
 ** linked list of FreeBlks is always kept in order by address.
 */
 struct FreeBlk {
+  // 该可用空间块中的字节数
   u16 iSize; /* Number of bytes in this block of free space */
+  // MemPage.u.aDisk[] 中下一个空闲块的索引
   u16 iNext; /* Index in MemPage.u.aDisk[] of the next free block */
 };
 
@@ -254,6 +263,7 @@ struct FreeBlk {
 ** pages.
 */
 struct OverflowPage {
+  // 下一个溢出页号(空闲页)
   Pgno iNext;
   char aPayload[OVERFLOW_SIZE];
 };
@@ -299,14 +309,19 @@ struct FreelistInfo {
 */
 struct MemPage {
   union {
+    // 页面数据存储在磁盘上
     char aDisk[SQLITE_PAGE_SIZE]; /* Page data stored on disk */
     PageHdr hdr;                  /* Overlay page header */
   } u;
   int isInit;                /* True if auxiliary data is initialized */
+  // 副页面
   MemPage *pParent;          /* The parent of this page.  NULL for root */
   int nFree;                 /* Number of free bytes in u.aDisk[] */
   int nCell;                 /* Number of entries on this page */
+  // 一些指向 apCell 一些指向 a.Disk,
+  // 空间不够
   int isOverfull;            /* Some apCell[] points outside u.aDisk[] */
+  // 所有数据条目均按排序顺序排列
   Cell *apCell[MX_CELL + 2]; /* All data entires in sorted order */
 };
 
@@ -344,9 +359,11 @@ typedef Btree Bt;
 struct BtCursor {
   Btree *pBt;              /* The Btree to which this cursor belongs */
   BtCursor *pNext, *pPrev; /* Forms a linked list of all cursors */
-  // 这棵树的根页面
+  // 这棵树的根页面号
   Pgno pgnoRoot;           /* The root page of this tree */
+  // 包含记录的页面, (开始时是根页)
   MemPage *pPage;          /* Page that contains the entry */
+  // 记录在页面中的索引
   int idx;                 /* Index of the entry in pPage->apCell[] */
   u8 wrFlag;               /* True if writable */
   u8 bSkipNext;            /* sqliteBtreeNext() is no-op if true */
@@ -376,6 +393,9 @@ static int cellSize(Cell *pCell) {
 ** beginning of the page and all free space is collected
 ** into one big FreeBlk at the end of the page.
 */
+/*
+ * 碎片整理
+ */
 static void defragmentPage(MemPage *pPage) {
   int pc, i, n;
   FreeBlk *pFBlk;
@@ -433,12 +453,17 @@ static int allocateSpace(MemPage *pPage, int nByte) {
   assert(sqlitepager_iswriteable(pPage));
   assert(nByte == ROUNDUP(nByte));
   if (pPage->nFree < nByte || pPage->isOverfull)
+    // 大于本页剩余空间 或 页面已满
     return 0;
+  // 本页剩余空间大于等于 nByte
   pIdx = &pPage->u.hdr.firstFree;
   p = (FreeBlk *)&pPage->u.aDisk[*pIdx];
   while (p->iSize < nByte) {
     assert(cnt++ < SQLITE_PAGE_SIZE / 4);
     if (p->iNext == 0) {
+      // 没有下一个空闲块了
+      // 都没有足够的空间
+      // 尝试整理页面
       defragmentPage(pPage);
       pIdx = &pPage->u.hdr.firstFree;
     } else {
@@ -994,7 +1019,7 @@ int sqliteBtreeCursor(Btree *pBt, int iTable, int wrFlag, BtCursor **ppCur) {
     rc = SQLITE_NOMEM;
     goto create_cursor_exception;
   }
-  // 设置表的跟页号
+  // 设置表的根页号
   pCur->pgnoRoot = (Pgno)iTable;
   rc = sqlitepager_get(pBt->pPager, pCur->pgnoRoot, (void **)&pCur->pPage);
   if (rc != SQLITE_OK) {
@@ -1341,6 +1366,9 @@ int sqliteBtreeKeyCompare(
 /*
 ** Move the cursor down to a new child page.
 */
+/*
+ * 将光标向下移动到新的子页面。
+ */
 static int moveToChild(BtCursor *pCur, int newPgno) {
   int rc;
   MemPage *pNewPage;
@@ -1351,6 +1379,7 @@ static int moveToChild(BtCursor *pCur, int newPgno) {
   rc = initPage(pNewPage, newPgno, pCur->pPage);
   if (rc)
     return rc;
+  // 不需要持有了，释放
   sqlitepager_unref(pCur->pPage);
   pCur->pPage = pNewPage;
   pCur->idx = 0;
@@ -1491,6 +1520,10 @@ int sqliteBtreeLast(BtCursor *pCur, int *pRes) {
 **     *pRes>0      The cursor is left pointing at an entry that
 **                  is larger than pKey.
 */
+/*
+ * 移动光标，使其指向 pKey 附近的条目。
+ * 返回成功代码。
+ */
 int sqliteBtreeMoveto(BtCursor *pCur, const void *pKey, int nKey, int *pRes) {
   int rc;
   if (pCur->pPage == 0)
@@ -1726,6 +1759,9 @@ static int freePage(Btree *pBt, void *pPage, Pgno pgno) {
 ** Erase all the data out of a cell.  This involves returning overflow
 ** pages back the freelist.
 */
+/*
+ * 释放记录
+ */
 static int clearCell(Btree *pBt, Cell *pCell) {
   Pager *pPager = pBt->pPager;
   OverflowPage *pOvfl;
@@ -1755,6 +1791,9 @@ static int clearCell(Btree *pBt, Cell *pCell) {
 ** Create a new cell from key and data.  Overflow pages are allocated as
 ** necessary and linked to this cell.
 */
+/*
+ * 创建新的记录
+ */
 static int
 fillInCell(Btree *pBt,  /* The whole Btree.  Needed to allocate pages */
            Cell *pCell, /* Populate this Cell structure */
@@ -1785,13 +1824,16 @@ fillInCell(Btree *pBt,  /* The whole Btree.  Needed to allocate pages */
   pPrior = 0;
   while (nPayload > 0) {
     if (spaceLeft == 0) {
+      // 空间不够了，需要分配一个新的页面
       rc = allocatePage(pBt, (MemPage **)&pOvfl, pNext);
       if (rc) {
         *pNext = 0;
       }
       if (pPrior)
+        // 排除记录所在页，其他的用完就释放持有
         sqlitepager_unref(pPrior);
       if (rc) {
+        // 出现异常了，清空已经分配的记录
         clearCell(pBt, pCell);
         return rc;
       }
@@ -1881,6 +1923,7 @@ static void dropCell(MemPage *pPage, int idx, int sz) {
   assert(sz == cellSize(pPage->apCell[idx]));
   assert(sqlitepager_iswriteable(pPage));
   freeSpace(pPage, Addr(pPage->apCell[idx]) - Addr(pPage), sz);
+  // 移动排序的记录
   for (j = idx; j < pPage->nCell - 1; j++) {
     pPage->apCell[j] = pPage->apCell[j + 1];
   }
@@ -1906,12 +1949,15 @@ static void insertCell(MemPage *pPage, int i, Cell *pCell, int sz) {
   assert(sz == cellSize(pCell));
   assert(sqlitepager_iswriteable(pPage));
   idx = allocateSpace(pPage, sz);
+  // 移动排序的记录
   for (j = pPage->nCell; j > i; j--) {
     pPage->apCell[j] = pPage->apCell[j - 1];
   }
   pPage->nCell++;
   if (idx <= 0) {
     pPage->isOverfull = 1;
+    // 这个记录是临时的
+    // balance 会重新平衡
     pPage->apCell[i] = pCell;
   } else {
     memcpy(&pPage->u.aDisk[idx], pCell, sz);
@@ -1925,6 +1971,9 @@ static void insertCell(MemPage *pPage, int i, Cell *pCell, int sz) {
 ** Invoke this routine once to repair damage after one or more
 ** invocations of either insertCell() or dropCell().
 */
+/*
+ * 重新连接记录的顺序
+ */
 static void relinkCellList(MemPage *pPage) {
   int i;
   u16 *pIdx;
@@ -1933,6 +1982,7 @@ static void relinkCellList(MemPage *pPage) {
   for (i = 0; i < pPage->nCell; i++) {
     int idx = Addr(pPage->apCell[i]) - Addr(pPage);
     assert(idx > 0 && idx < SQLITE_PAGE_SIZE);
+    // 把当前位置的索引写入上一个位置
     *pIdx = idx;
     pIdx = &pPage->apCell[i]->h.iNext;
   }
@@ -2042,6 +2092,7 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur) {
   assert(sqlitepager_iswriteable(pPage));
   if (!pPage->isOverfull && pPage->nFree < SQLITE_PAGE_SIZE / 2 &&
       pPage->nCell >= 2) {
+    // 满足平衡条件
     relinkCellList(pPage);
     return SQLITE_OK;
   }
@@ -2084,7 +2135,10 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur) {
       return SQLITE_OK;
     }
     if (!pPage->isOverfull) {
-      /* It is OK for the root page to be less than half full.
+      /* 
+       * It is OK for the root page to be less than half full.
+       *
+       * 根页面小于半满是可以的。
        */
       relinkCellList(pPage);
       return SQLITE_OK;
@@ -2115,6 +2169,7 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur) {
       extraUnref = pChild;
     }
     zeroPage(pPage);
+    // 记录下一个子节点的页号
     pPage->u.hdr.rightChild = pgnoChild;
     pParent = pPage;
     pPage = pChild;
@@ -2442,22 +2497,28 @@ int sqliteBtreeInsert(
   if (!pCur->wrFlag) {
     return SQLITE_PERM; /* Cursor not open for writing */
   }
+  // 获取记录所在页位置
   rc = sqliteBtreeMoveto(pCur, pKey, nKey, &loc);
   if (rc)
     return rc;
   pPage = pCur->pPage;
+  // 开始写啰，先加写锁记录原页先
   rc = sqlitepager_write(pPage);
   if (rc)
     return rc;
+  // 创建新记录
   rc = fillInCell(pBt, &newCell, pKey, nKey, pData, nData);
   if (rc)
     return rc;
+  // 计算记录结构的大小，并非全部的
   szNew = cellSize(&newCell);
   if (loc == 0) {
     newCell.h.leftChild = pPage->apCell[pCur->idx]->h.leftChild;
+    // 释放掉原记录(单元)
     rc = clearCell(pBt, pPage->apCell[pCur->idx]);
     if (rc)
       return rc;
+    // 释放记录的在索引上的内存
     dropCell(pPage, pCur->idx, cellSize(pPage->apCell[pCur->idx]));
   } else if (loc < 0 && pPage->nCell > 0) {
     assert(pPage->u.hdr.rightChild == 0); /* Must be a leaf page */
@@ -2465,6 +2526,7 @@ int sqliteBtreeInsert(
   } else {
     assert(pPage->u.hdr.rightChild == 0); /* Must be a leaf page */
   }
+  // 插入新记录
   insertCell(pPage, pCur->idx, &newCell, szNew);
   rc = balance(pCur->pBt, pPage, pCur);
   /* sqliteBtreePageDump(pCur->pBt, pCur->pgnoRoot, 1); */

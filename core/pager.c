@@ -1237,9 +1237,11 @@ int sqlitepager_begin(void *pData) {
 ** is a call to sqlitepager_commit() or sqlitepager_rollback() to
 ** reset.
 */
-// 将数据页标记为可写。
-// 如果日志中尚不存在该页面，则会将其写入日志中。 
-// 在对页面进行更改之前必须调用此例程。
+/* 
+ * 将数据页标记为可写。
+ * 如果日志中尚不存在该页面，则会将其写入日志中进行备份.
+ * 在对页面进行更改之前必须调用此例程。
+ */
 int sqlitepager_write(void *pData) {
   PgHdr *pPg = DATA_TO_PGHDR(pData);
   Pager *pPager = pPg->pPager;
