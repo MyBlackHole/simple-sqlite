@@ -122,39 +122,39 @@ typedef int (*sqlite_callback)(void *, int, char **, char **);
 ** behavior can be modified somewhat using the sqlite_busy_handler()
 ** and sqlite_busy_timeout() functions below.)
 */
-int sqlite_exec(sqlite *,        /* An open database */
-                const char *sql, /* SQL to be executed */
-                sqlite_callback, /* Callback function */
-                void *,          /* 1st argument to callback function */
-                char **errmsg    /* Error msg written here */
+int sqlite_exec(sqlite *, /* An open database */
+		const char *sql, /* SQL to be executed */
+		sqlite_callback, /* Callback function */
+		void *, /* 1st argument to callback function */
+		char **errmsg /* Error msg written here */
 );
 
 /*
 ** Return values for sqlite_exec()
 */
-#define SQLITE_OK 0          /* Successful result */
-#define SQLITE_ERROR 1       /* SQL error or missing database */
-#define SQLITE_INTERNAL 2    /* An internal logic error in SQLite */
-#define SQLITE_PERM 3        /* Access permission denied */
-#define SQLITE_ABORT 4       /* Callback routine requested an abort */
-#define SQLITE_BUSY 5        /* The database file is locked */
-#define SQLITE_LOCKED 6      /* A table in the database is locked */
-#define SQLITE_NOMEM 7       /* A malloc() failed */
-#define SQLITE_READONLY 8    /* Attempt to write a readonly database */
-#define SQLITE_INTERRUPT 9   /* Operation terminated by sqlite_interrupt() */
-#define SQLITE_IOERR 10      /* Some kind of disk I/O error occurred */
+#define SQLITE_OK 0 /* Successful result */
+#define SQLITE_ERROR 1 /* SQL error or missing database */
+#define SQLITE_INTERNAL 2 /* An internal logic error in SQLite */
+#define SQLITE_PERM 3 /* Access permission denied */
+#define SQLITE_ABORT 4 /* Callback routine requested an abort */
+#define SQLITE_BUSY 5 /* The database file is locked */
+#define SQLITE_LOCKED 6 /* A table in the database is locked */
+#define SQLITE_NOMEM 7 /* A malloc() failed */
+#define SQLITE_READONLY 8 /* Attempt to write a readonly database */
+#define SQLITE_INTERRUPT 9 /* Operation terminated by sqlite_interrupt() */
+#define SQLITE_IOERR 10 /* Some kind of disk I/O error occurred */
 // 数据库磁盘映像格式错误
-#define SQLITE_CORRUPT 11    /* The database disk image is malformed */
-#define SQLITE_NOTFOUND 12   /* (Internal Only) Table or record not found */
-#define SQLITE_FULL 13       /* Insertion failed because database is full */
-#define SQLITE_CANTOPEN 14   /* Unable to open the database file */
-#define SQLITE_PROTOCOL 15   /* Database lock protocol error */
-#define SQLITE_EMPTY 16      /* (Internal Only) Database table is empty */
-#define SQLITE_SCHEMA 17     /* The database schema changed */
-#define SQLITE_TOOBIG 18     /* Too much data for one row of a table */
+#define SQLITE_CORRUPT 11 /* The database disk image is malformed */
+#define SQLITE_NOTFOUND 12 /* (Internal Only) Table or record not found */
+#define SQLITE_FULL 13 /* Insertion failed because database is full */
+#define SQLITE_CANTOPEN 14 /* Unable to open the database file */
+#define SQLITE_PROTOCOL 15 /* Database lock protocol error */
+#define SQLITE_EMPTY 16 /* (Internal Only) Database table is empty */
+#define SQLITE_SCHEMA 17 /* The database schema changed */
+#define SQLITE_TOOBIG 18 /* Too much data for one row of a table */
 #define SQLITE_CONSTRAINT 19 /* Abort due to contraint violation */
-#define SQLITE_MISMATCH 20   /* Data type mismatch */
-#define SQLITE_MISUSE 21     /* Library used incorrectly */
+#define SQLITE_MISMATCH 20 /* Data type mismatch */
+#define SQLITE_MISUSE 21 /* Library used incorrectly */
 
 /*
 ** Each entry in an SQLite table has a unique integer key.  (The key is
@@ -291,12 +291,12 @@ void sqlite_busy_timeout(sqlite *, int ms);
 ** The return value of this routine is the same as from sqlite_exec().
 */
 int sqlite_get_table(
-    sqlite *,        /* An open database */
-    const char *sql, /* SQL to be executed */
-    char ***resultp, /* Result written to a char *[]  that this points to */
-    int *nrow,       /* Number of result rows written here */
-    int *ncolumn,    /* Number of result columns written here */
-    char **errmsg    /* Error msg written here */
+	sqlite *, /* An open database */
+	const char *sql, /* SQL to be executed */
+	char ***resultp, /* Result written to a char *[]  that this points to */
+	int *nrow, /* Number of result rows written here */
+	int *ncolumn, /* Number of result columns written here */
+	char **errmsg /* Error msg written here */
 );
 
 /*
@@ -343,38 +343,38 @@ void sqlite_free_table(char **result);
 ** literal.
 */
 int sqlite_exec_printf(
-    sqlite *,              /* An open database */
-    const char *sqlFormat, /* printf-style format string for the SQL */
-    sqlite_callback,       /* Callback function */
-    void *,                /* 1st argument to callback function */
-    char **errmsg,         /* Error msg written here */
-    ...                    /* Arguments to the format string. */
+	sqlite *, /* An open database */
+	const char *sqlFormat, /* printf-style format string for the SQL */
+	sqlite_callback, /* Callback function */
+	void *, /* 1st argument to callback function */
+	char **errmsg, /* Error msg written here */
+	... /* Arguments to the format string. */
 );
 int sqlite_exec_vprintf(
-    sqlite *,              /* An open database */
-    const char *sqlFormat, /* printf-style format string for the SQL */
-    sqlite_callback,       /* Callback function */
-    void *,                /* 1st argument to callback function */
-    char **errmsg,         /* Error msg written here */
-    va_list ap             /* Arguments to the format string. */
+	sqlite *, /* An open database */
+	const char *sqlFormat, /* printf-style format string for the SQL */
+	sqlite_callback, /* Callback function */
+	void *, /* 1st argument to callback function */
+	char **errmsg, /* Error msg written here */
+	va_list ap /* Arguments to the format string. */
 );
 int sqlite_get_table_printf(
-    sqlite *,              /* An open database */
-    const char *sqlFormat, /* printf-style format string for the SQL */
-    char ***resultp, /* Result written to a char *[]  that this points to */
-    int *nrow,       /* Number of result rows written here */
-    int *ncolumn,    /* Number of result columns written here */
-    char **errmsg,   /* Error msg written here */
-    ...              /* Arguments to the format string */
+	sqlite *, /* An open database */
+	const char *sqlFormat, /* printf-style format string for the SQL */
+	char ***resultp, /* Result written to a char *[]  that this points to */
+	int *nrow, /* Number of result rows written here */
+	int *ncolumn, /* Number of result columns written here */
+	char **errmsg, /* Error msg written here */
+	... /* Arguments to the format string */
 );
 int sqlite_get_table_vprintf(
-    sqlite *,              /* An open database */
-    const char *sqlFormat, /* printf-style format string for the SQL */
-    char ***resultp, /* Result written to a char *[]  that this points to */
-    int *nrow,       /* Number of result rows written here */
-    int *ncolumn,    /* Number of result columns written here */
-    char **errmsg,   /* Error msg written here */
-    va_list ap       /* Arguments to the format string */
+	sqlite *, /* An open database */
+	const char *sqlFormat, /* printf-style format string for the SQL */
+	char ***resultp, /* Result written to a char *[]  that this points to */
+	int *nrow, /* Number of result rows written here */
+	int *ncolumn, /* Number of result columns written here */
+	char **errmsg, /* Error msg written here */
+	va_list ap /* Arguments to the format string */
 );
 
 /*
@@ -403,19 +403,21 @@ typedef struct sqlite_func sqlite_func;
 ** the documentation for details.
 */
 int sqlite_create_function(
-    sqlite *,          /* Database where the new function is registered */
-    const char *zName, /* Name of the new function */
-    int nArg,          /* Number of arguments.  -1 means any number */
-    void (*xFunc)(sqlite_func *, int, const char **), /* C code to implement */
-    void *pUserData /* Available via the sqlite_user_data() call */
+	sqlite *, /* Database where the new function is registered */
+	const char *zName, /* Name of the new function */
+	int nArg, /* Number of arguments.  -1 means any number */
+	void (*xFunc)(sqlite_func *, int,
+		      const char **), /* C code to implement */
+	void *pUserData /* Available via the sqlite_user_data() call */
 );
 int sqlite_create_aggregate(
-    sqlite *,          /* Database where the new function is registered */
-    const char *zName, /* Name of the function */
-    int nArg,          /* Number of arguments */
-    void (*xStep)(sqlite_func *, int, const char **), /* Called for each row */
-    void (*xFinalize)(sqlite_func *), /* Called once to get final result */
-    void *pUserData /* Available via the sqlite_user_data() call */
+	sqlite *, /* Database where the new function is registered */
+	const char *zName, /* Name of the function */
+	int nArg, /* Number of arguments */
+	void (*xStep)(sqlite_func *, int,
+		      const char **), /* Called for each row */
+	void (*xFinalize)(sqlite_func *), /* Called once to get final result */
+	void *pUserData /* Available via the sqlite_user_data() call */
 );
 
 /*

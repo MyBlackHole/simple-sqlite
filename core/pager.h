@@ -25,7 +25,8 @@
 ** (The speed differences are minimal.)
 */
 // 一页的大小
-#define SQLITE_PAGE_SIZE 1024
+#define SQLITE_PAGE_SIZE 0x8000
+// #define SQLITE_PAGE_SIZE 1024
 
 /*
 ** Maximum number of pages in one database.  (This is a limitation of
@@ -37,7 +38,7 @@
 ** The type used to represent a page number.  The first page in a file
 ** is called page 1.  0 is used to represent "not a page".
 */
-// 用于表示页码的类型。 
+// 用于表示页码的类型。
 // 文件中的第一页称为 1 页。
 // 0 用于表示“不是页”。
 typedef unsigned int Pgno;
@@ -52,7 +53,7 @@ typedef struct Pager Pager;
 ** routines:
 */
 int sqlitepager_open(Pager **ppPager, const char *zFilename, int nPage,
-                     int nEx);
+		     int nEx);
 void sqlitepager_set_destructor(Pager *, void (*)(void *));
 void sqlitepager_set_cachesize(Pager *, int);
 int sqlitepager_close(Pager *pPager);

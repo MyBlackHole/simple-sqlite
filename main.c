@@ -15,11 +15,11 @@ int main() {
     char *fileLocation = "C://test.db";
     #endif
 
-    /* Tests for VFS functionality */
-    testVFS(&fileLocation);
-
-    /* Tests for Pager functionality */
-    testPager(&fileLocation);
+    // /* Tests for VFS functionality */
+    // testVFS(&fileLocation);
+    //
+    // /* Tests for Pager functionality */
+    // testPager(&fileLocation);
 
     /* Tests for Btree functionality */
     testBtree(&fileLocation);

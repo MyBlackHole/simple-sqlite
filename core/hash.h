@@ -30,15 +30,15 @@ typedef struct HashElem HashElem;
 ** this structure opaque.
 */
 struct Hash {
-  char keyClass;     /* SQLITE_HASH_INT, _POINTER, _STRING, _BINARY */
-  char copyKey;      /* True if copy of key made on insert */
-  int count;         /* Number of entries in this table */
-  HashElem *first;   /* The first element of the array */
-  int htsize;        /* Number of buckets in the hash table */
-  struct _ht {       /* the hash table */
-    int count;       /* Number of entries with this hash */
-    HashElem *chain; /* Pointer to first entry with this hash */
-  } *ht;
+	char keyClass; /* SQLITE_HASH_INT, _POINTER, _STRING, _BINARY */
+	char copyKey; /* True if copy of key made on insert */
+	int count; /* Number of entries in this table */
+	HashElem *first; /* The first element of the array */
+	int htsize; /* Number of buckets in the hash table */
+	struct _ht { /* the hash table */
+		int count; /* Number of entries with this hash */
+		HashElem *chain; /* Pointer to first entry with this hash */
+	} *ht;
 };
 
 /* Each element in the hash table is an instance of the following
@@ -48,10 +48,10 @@ struct Hash {
 ** be opaque because it is used by macros.
 */
 struct HashElem {
-  HashElem *next, *prev; /* Next and previous elements in the table */
-  void *data;            /* Data associated with this element */
-  void *pKey;
-  int nKey; /* Key associated with this element */
+	HashElem *next, *prev; /* Next and previous elements in the table */
+	void *data; /* Data associated with this element */
+	void *pKey;
+	int nKey; /* Key associated with this element */
 };
 
 /*

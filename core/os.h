@@ -19,8 +19,8 @@
 
 #ifndef OS_UNIX
 #ifndef OS_WIN
-#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) ||                \
-    defined(__MINGW32__) || defined(__BORLANDC__)
+#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || \
+	defined(__MINGW32__) || defined(__BORLANDC__)
 #define OS_WIN 1
 #define OS_UNIX 0
 #else
@@ -41,9 +41,9 @@
 #if OS_UNIX
 typedef struct OsFile OsFile;
 struct OsFile {
-  struct lockInfo *pLock; /* Information about locks on this inode */
-  int fd;                 /* The file descriptor */
-  int locked;             /* True if this user holds the lock */
+	struct lockInfo *pLock; /* Information about locks on this inode */
+	int fd; /* The file descriptor */
+	int locked; /* True if this user holds the lock */
 };
 #define SQLITE_TEMPNAME_SIZE 200
 #if defined(HAVE_USLEEP) && HAVE_USLEEP
@@ -58,8 +58,8 @@ struct OsFile {
 #include <windows.h>
 typedef struct OsFile OsFile;
 struct OsFile {
-  HANDLE h;
-  int locked;
+	HANDLE h;
+	int locked;
 };
 #define SQLITE_TEMPNAME_SIZE (MAX_PATH + 50)
 #define SQLITE_MIN_SLEEP_MS 1

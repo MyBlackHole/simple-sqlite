@@ -14,68 +14,68 @@
  *
  * @param fileLocation
  */
-void testVFS(char **fileLocation) {
-    printf("\nStart running VFS tests\n");
-    OsFile fd;
-    int readOnly = 0;
+void testVFS(char **fileLocation)
+{
+	printf("\nStart running VFS tests\n");
+	OsFile fd;
+	int readOnly = 0;
 
-    /** Step 1 **/
-    printf("Open file from %s\n", *fileLocation);
-    int rc = sqliteOsOpenReadWrite(*fileLocation, &fd, &readOnly);
-    printf("File open status %d\n" ,rc);
-    int fileExist = sqliteOsFileExists(*fileLocation);
-    printf("Does file exist %d\n", fileExist);
+	/** Step 1 **/
+	printf("Open file from %s\n", *fileLocation);
+	int rc = sqliteOsOpenReadWrite(*fileLocation, &fd, &readOnly);
+	printf("File open status %d\n", rc);
+	int fileExist = sqliteOsFileExists(*fileLocation);
+	printf("Does file exist %d\n", fileExist);
 
-    // File should be exist when open a file.
-    assert(fileExist == 1);
+	// File should be exist when open a file.
+	assert(fileExist == 1);
 
-    /** Step 2 **/
-    // Seek offset 0 on the database fle
-    sqliteOsSeek(&fd, 0);
-    char *valueToWrite = "hello this is vfs test";
-    // write string to start offset 0 with the length of 22 byte
-    sqliteOsWrite(&fd, valueToWrite, 22);
+	/** Step 2 **/
+	// Seek offset 0 on the database fle
+	sqliteOsSeek(&fd, 0);
+	char *valueToWrite = "hello this is vfs test";
+	// write string to start offset 0 with the length of 22 byte
+	sqliteOsWrite(&fd, valueToWrite, 22);
 
-    /** step 3 **/
-    // Seek offset 6 on the database file
-    sqliteOsSeek(&fd, 6);
-    char readBuffer[16];
-    // Read 4 bytes from offset 6 and write it into readBuffer
-    sqliteOsRead(&fd, &readBuffer, 4);
-    printf("Read from offset: %s\n", readBuffer);
+	/** step 3 **/
+	// Seek offset 6 on the database file
+	sqliteOsSeek(&fd, 6);
+	char readBuffer[16];
+	// Read 4 bytes from offset 6 and write it into readBuffer
+	sqliteOsRead(&fd, &readBuffer, 4);
+	printf("Read from offset: %s\n", readBuffer);
 
-    // Extracted data should be "this"
-    assert(strncmp(readBuffer, "this", 4) == 0);
+	// Extracted data should be "this"
+	assert(strncmp(readBuffer, "this", 4) == 0);
 
-    /** Step 4 **/
-    // Seek offset 11 on database file
-    sqliteOsSeek(&fd, 11);
-    char *valueToOverride = "is override";
-    // Write string to offset 11
-    sqliteOsWrite(&fd, valueToOverride,11);
+	/** Step 4 **/
+	// Seek offset 11 on database file
+	sqliteOsSeek(&fd, 11);
+	char *valueToOverride = "is override";
+	// Write string to offset 11
+	sqliteOsWrite(&fd, valueToOverride, 11);
 
-    // Seek offset 0 on database file
-    sqliteOsSeek(&fd, 0);
-    char finalResult[22];
-    // Read the string from offset 0 and write the result into finalResult
-    sqliteOsRead(&fd, &finalResult,22);
-    printf("Final result: %s\n", finalResult);
+	// Seek offset 0 on database file
+	sqliteOsSeek(&fd, 0);
+	char finalResult[22];
+	// Read the string from offset 0 and write the result into finalResult
+	sqliteOsRead(&fd, &finalResult, 22);
+	printf("Final result: %s\n", finalResult);
 
-    // After override the initial string
-    assert(strncmp(finalResult, "hello this is override", 22) == 0);
+	// After override the initial string
+	assert(strncmp(finalResult, "hello this is override", 22) == 0);
 
-    /** Step 5 **/
-    // Close the file connection
-    rc = sqliteOsClose(&fd);
-    printf("File close status: %d\n", rc);
+	/** Step 5 **/
+	// Close the file connection
+	rc = sqliteOsClose(&fd);
+	printf("File close status: %d\n", rc);
 
-    // Delete the file
-    sqliteOsDelete(*fileLocation);
+	// Delete the file
+	sqliteOsDelete(*fileLocation);
 
-    // Check if file exist
-    fileExist = sqliteOsFileExists(*fileLocation);
-    printf("Does file exist after delete %d\n", fileExist);
+	// Check if file exist
+	fileExist = sqliteOsFileExists(*fileLocation);
+	printf("Does file exist after delete %d\n", fileExist);
 
-    assert(fileExist == 0);
-
+	assert(fileExist == 0);
 }
